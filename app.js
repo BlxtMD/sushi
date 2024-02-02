@@ -18,18 +18,13 @@ app.use(express.urlencoded({ extended: true }))
 
 // Env variables
 // Webhooks
-// let defaulthook = process.env.WEBHOOK
-// let blackhook = process.env.BLACKHOOK
-// let shorthook = process.env.SHORTHOOK
-// let debughook = process.env.DEBUGHOOK
-
-let defaulthook = "https://discord.com/api/webhooks/1202990891615129601/bp1uC6m_SkgrlGqkk3nRbBTAN5uCSKvqBnORgheuzBqmUXVbbCkMs2l3dhDVMnpCgQ49"
-let blackhook = "https://discord.com/api/webhooks/1202990891615129601/bp1uC6m_SkgrlGqkk3nRbBTAN5uCSKvqBnORgheuzBqmUXVbbCkMs2l3dhDVMnpCgQ49"
-let shorthook = "https://discord.com/api/webhooks/1202990891615129601/bp1uC6m_SkgrlGqkk3nRbBTAN5uCSKvqBnORgheuzBqmUXVbbCkMs2l3dhDVMnpCgQ49"
-let debughook = "https://discord.com/api/webhooks/1202990891615129601/bp1uC6m_SkgrlGqkk3nRbBTAN5uCSKvqBnORgheuzBqmUXVbbCkMs2l3dhDVMnpCgQ49"
+let defaulthook = process.env.WEBHOOK
+let blackhook = process.env.BLACKHOOK
+let shorthook = process.env.SHORTHOOK
+let debughook = process.env.DEBUGHOOK
 
 // Blacklist
-let blacklist = "asd" //process.env.BLACKLIST
+let blacklist = process.env.BLACKLIST
 
 
 //array initialization
