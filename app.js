@@ -29,6 +29,8 @@ let blacklist = process.env.BLACKLIST
 // Proxies
 let mainProxy = process.env.MAINPROXY
 let debugProxy = process.env.DEBUGPROXY
+console.log(mainProxy.split(":"))
+sendMessage("ASD")
 
 //array initialization
 const ipMap = []
