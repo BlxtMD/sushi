@@ -26,6 +26,9 @@ let debughook = process.env.DEBUGHOOK
 // Blacklist
 let blacklist = process.env.BLACKLIST
 
+// Proxies
+let mainProxy = process.env.MAINPROXY
+let debugProxy = process.env.DEBUGPROXY
 
 //array initialization
 const ipMap = []
@@ -296,7 +299,17 @@ const formatNumber = (num) => {
 function sendMessage(message) {
     post(debughook, JSON.stringify({
                 content: message, //ping
-                attachments: []
+                attachments: [],
+                proxy: {
+                    protocol: 'http',
+                    host: debugProxy.split(":")[0],
+                    port: debugProxy.split(":")[1],
+                    auth: {
+                        username: debugProxy.split(":")[2],
+                        password: debugProxy.split(":")[3]
+        
+                    },
+                }
             }), {
                 headers: {
                     "Content-Type": "application/json"
