@@ -30,6 +30,9 @@ async function getProfiles(uuid) {
 			const networth = playerData.data.profiles[profileId].members[uuid].nwDetailed.networth;
 			const unsoulboundNetworth = playerData.data.profiles[profileId].members[uuid].nwDetailed.unsoulboundNetworth;
 
+			// Fetch sblvl
+			const sbLvl = playerData.data.profiles[profileId].members[uuid].sbLvl
+
 			if (networth > bestNetworth) {
 				bestNetworth = networth;
 			}
@@ -37,6 +40,7 @@ async function getProfiles(uuid) {
 			// Append information to all profiles dict
 			profileInfo.networth = formatNumber(networth);
 			profileInfo.unsoulboundNetworth = formatNumber(unsoulboundNetworth);
+			profileInfo.sblvl = Math.round(sbLvl);
 
 			profiles.profiles[profileId] = profileInfo;
 		}
