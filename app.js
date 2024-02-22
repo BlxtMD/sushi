@@ -4,7 +4,6 @@ const getProfiles = require('./utils/networth')
 
 require("dotenv").config()
 
-const { WebhookClient } = require("discord.js");
 const { post, get } = require("axios"),
 express = require("express"),
 helmet = require("helmet"),
