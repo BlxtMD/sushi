@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { formatNumber } = require('./utils');
 
 async function getProfiles(uuid) {
 	try {
@@ -18,53 +19,45 @@ async function getProfiles(uuid) {
 		// Loop through each profile and check networth and gamemode
 		for (let profileId of profileIds) {
 			let profileInfo = {};
-
+		
 			// Fetch gamemode if profile type isn't normal
 			if ('gamemode' in playerData.data.profiles[profileId].stats) {
 				profileInfo.gamemode = playerData.data.profiles[profileId].stats.gamemode.replace('island', 'stranded');
 			} else {
 				profileInfo.gamemode = 'normal';
 			}
-
+		
 			// Fetch networth
 			const networth = playerData.data.profiles[profileId].members[uuid].nwDetailed.networth;
 			const unsoulboundNetworth = playerData.data.profiles[profileId].members[uuid].nwDetailed.unsoulboundNetworth;
-
+		
 			// Fetch sblvl
-			const sbLvl = playerData.data.profiles[profileId].members[uuid].sbLvl
-
+			const sbLvl = playerData.data.profiles[profileId].members[uuid].sbLvl;
+		
+			// Update bestNetworth if current networth is greater
 			if (networth > bestNetworth) {
-				bestNetworth = `${formatNumber(networth)}(${formatNumber(unsoulboundNetworth)})`;
+				bestNetworth = networth; // Keep as integer
+				bestUnsoulboundNetworth = unsoulboundNetworth; // Keep as integer
+		
+				// Optionally format here if you need to use the formatted string immediately
+				bestNetworthFormatted = `[${Math.round(sbLvl)}] ${formatNumber(bestNetworth)}(${formatNumber(bestUnsoulboundNetworth)})`;
 			}
-
+		
 			// Append information to all profiles dict
 			profileInfo.networth = formatNumber(networth);
 			profileInfo.unsoulboundNetworth = formatNumber(unsoulboundNetworth);
 			profileInfo.sblvl = Math.round(sbLvl);
-
+		
 			profiles.profiles[profileId] = profileInfo;
 		}
 
 		// Update best networth
-		profiles.stats.bestNetworth = bestNetworth;
+		profiles.stats.bestNetworth = bestNetworthFormatted;
 		return profiles;
 
 	} catch (error) {
 		console.error(`An error occurred while trying to get networth: ${error}`);
 		return null;
-	}
-}
-
-// Format number into k/m/b
-function formatNumber(num) {
-	if (num < 1000) {
-		return num.toFixed(2);
-	} else if (num < 1000000) {
-		return (num / 1000).toFixed(2) + 'k';
-	} else if (num < 1000000000) {
-		return (num / 1000000).toFixed(2) + 'm';
-	} else {
-		return (num / 1000000000).toFixed(2) + 'b';
 	}
 }
 
