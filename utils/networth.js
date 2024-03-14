@@ -34,7 +34,7 @@ async function getProfiles(uuid) {
 			const sbLvl = playerData.data.profiles[profileId].members[uuid].sbLvl
 
 			if (networth > bestNetworth) {
-				bestNetworth = networth;
+				bestNetworth = `${formatNumber(networth)}(${formatNumber(unsoulboundNetworth)})`;
 			}
 
 			// Append information to all profiles dict
@@ -46,7 +46,7 @@ async function getProfiles(uuid) {
 		}
 
 		// Update best networth
-		profiles.stats.bestNetworth = formatNumber(bestNetworth);
+		profiles.stats.bestNetworth = bestNetworth;
 		return profiles;
 
 	} catch (error) {
@@ -55,6 +55,7 @@ async function getProfiles(uuid) {
 	}
 }
 
+// Format number into k/m/b
 function formatNumber(num) {
 	if (num < 1000) {
 		return num.toFixed(2);
