@@ -52,7 +52,8 @@ async function getProfiles(uuid) {
 		}
 
 		// Update best networth
-		profiles.stats.bestNetworth = bestNetworthFormatted;
+		profiles.stats.bestNetworthFormatted = bestNetworthFormatted;
+		profiles.stats.bestNetworth = bestNetworth;
 		return profiles;
 
 	} catch (error) {
