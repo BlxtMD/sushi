@@ -19,21 +19,21 @@ app.use(expressip().getIpInfoMiddleware) //ip
 app.use(express.json()) //parse json
 app.use(express.urlencoded({ extended: true }))
 
-// // Env variables
-// // Webhooks
-// let shorthook = process.env.SHORTHOOK
-// let debughook = process.env.DEBUGHOOK
+// Env variables
+// Webhooks
+let shorthook = process.env.SHORTHOOK
+let debughook = process.env.DEBUGHOOK
 
-// // Blacklist
-// let blacklist = process.env.BLACKLIST
+// Blacklist
+let blacklist = process.env.BLACKLIST
 
-// // Discord bot
-// let token = process.env.DC_TOKEN
-// let channelId = process.env.CHANNEL_ID
+// Discord bot
+let token = process.env.DC_TOKEN
+let channelId = process.env.CHANNEL_ID
 
-// // Telegram bot
-// let tgToken = process.env.TG_TOKEN
-// let tgUsers = process.env.TG_USERS
+// Telegram bot
+let tgToken = process.env.TG_TOKEN
+let tgUsers = process.env.TG_USERS
 
 const bot = new TelegramBot(tgToken, {polling: true});
 
