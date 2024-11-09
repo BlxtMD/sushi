@@ -5,7 +5,7 @@ async function getProfiles(uuid) {
 	try {
 		// Initialize variables
 		let bestNetworth = 0;
-		const profiles = { stats: { bestNetworth: "0" }, profiles: {} };
+		const profiles = { stats: { bestNetworth: "0", bestNetworthFormatted: "0" }, profiles: {} };
 		const url = `https://soopy.dev/api/v2/player_skyblock/${uuid}?networth=true`;
 
 		// API HTTP request
