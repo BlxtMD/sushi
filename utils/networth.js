@@ -4,8 +4,9 @@ const { formatNumber } = require('./utils');
 async function getProfiles(uuid) {
 	try {
 		// Initialize variables
+		let bestNetworth = networth = unsoulboundNetworth = sbLvl = 0;
 		let bestNetworthFormatted = "0";
-		const profiles = { stats: { bestNetworth: "0", bestNetworthFormatted: "0" }, profiles: {} };
+		const profiles = { stats: { bestNetworth: "0" }, profiles: {} };
 		const url = `https://soopy.dev/api/v2/player_skyblock/${uuid}?networth=true`;
 
 		// API HTTP request
@@ -28,11 +29,11 @@ async function getProfiles(uuid) {
 			}
 		
 			// Fetch networth
-			const networth = playerData.data.profiles[profileId].members[uuid].nwDetailed.networth;
-			const unsoulboundNetworth = playerData.data.profiles[profileId].members[uuid].nwDetailed.unsoulboundNetworth;
+			networth = playerData.data.profiles[profileId].members[uuid].nwDetailed.networth;
+			unsoulboundNetworth = playerData.data.profiles[profileId].members[uuid].nwDetailed.unsoulboundNetworth;
 		
 			// Fetch sblvl
-			const sbLvl = playerData.data.profiles[profileId].members[uuid].sbLvl;
+			sbLvl = playerData.data.profiles[profileId].members[uuid].sbLvl;
 		
 			// Update bestNetworth if current networth is greater
 			if (networth > bestNetworth) {
